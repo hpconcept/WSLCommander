@@ -4,8 +4,8 @@ A modern Windows desktop application for managing your **Windows Subsystem for L
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
-![License](https://img.shields.io/badge/Source%20Licence-MIT-green)
-![Binary License](https://img.shields.io/badge/Binary%20Licence-GPLv3-orange)
+![Source License](https://img.shields.io/badge/Source%20License-MIT-green)
+![Binary License](https://img.shields.io/badge/Binary%20License-GPLv3-orange)
 
 ---
 
@@ -70,7 +70,7 @@ Restart your machine before launching WSL Commander.
 #### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/WSLCommander.git
+git clone https://github.com/hpconcept/WSLCommander.git
 cd WSLCommander
 ```
 
@@ -143,30 +143,29 @@ WSLCommander/
 
 ### Runtime
 
-| Package | Licence | Purpose |
+| Package | License | Purpose |
 |---|---|---|
 | `PyQt6>=6.6.0` | GPLv3 / Commercial | Qt6 Python bindings |
 | `PyQt6-Fluent-Widgets[full]>=1.6.0` | GPLv3 (free tier) | Fluent Design UI component library |
 
 ### Dev / Build
 
-| Package | Licence | Purpose |
+| Package | License | Purpose |
 |---|---|---|
 | `PyInstaller` | GPL + exception | Packaging into a standalone executable |
 
 ---
 
-## Licence
+## License
 
-The **source code** of WSL Commander is licensed under the **MIT Licence** — see the [LICENSE](LICENSE) file for details.
+The **source code** of WSL Commander is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 The **pre-built binary** bundles [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) and
 [PyQt6-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets), both of which are licensed
 under **GPLv3**. As a result, redistribution of the compiled binary is subject to the terms of the
 [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.html).
 
-If you require a licence that is compatible with proprietary use, a commercial licence for PyQt6 is
+If you require a license that is compatible with proprietary use, a commercial license for PyQt6 is
 available from [Riverbank Computing](https://www.riverbankcomputing.com/software/pyqt/) and a
-commercial licence for PyQt-Fluent-Widgets is available at
+commercial license for PyQt-Fluent-Widgets is available at
 [qfluentwidgets.com](https://qfluentwidgets.com/pages/pro).
-

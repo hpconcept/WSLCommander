@@ -40,6 +40,7 @@ A modern Windows desktop application for managing your **Windows Subsystem for L
 ## Requirements
 
 - Windows 10 or Windows 11 with WSL2 enabled
+- [usbipd-win](https://github.com/dorssel/usbipd-win) *(optional — required for USB sharing functionality)*
 
 ### Enable WSL2 (if not already set up)
 
@@ -50,6 +51,18 @@ wsl --install
 ```
 
 Restart your machine before launching WSL Commander.
+
+### Install usbipd-win (for USB sharing)
+
+USB device sharing requires [usbipd-win](https://github.com/dorssel/usbipd-win). Install it via `winget`:
+
+```powershell
+winget install usbipd
+```
+
+Or download the installer from the [usbipd-win releases page](https://github.com/dorssel/usbipd-win/releases).
+
+> **Note:** Without `usbipd-win`, the USB page will still open but no devices will be listed and attach/detach actions will not be available.
 
 ---
 

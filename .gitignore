@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+*.egg-link
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# PyInstaller
+*.spec
+dist/
+build/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Distribution / packaging
+*.whl
+*.tar.gz
+*.zip
+

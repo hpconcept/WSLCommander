@@ -1,0 +1,32 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Build executable
+        run: pyinstaller WSLCommander.spec
+
+      - name: Zip artifact
+        run: Compress-Archive -Path dist\WSLCommander -DestinationPath WSLCommander-${{ github.ref_name }}.zip
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: WSLCommander-${{ github.ref_name }}.zip
+

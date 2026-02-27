@@ -23,10 +23,10 @@ env/
 ENV/
 .env
 
-# PyInstaller
-*.spec
+# PyInstaller build output
 dist/
 build/
+# (WSLCommander.spec is intentionally tracked)
 
 # Unit test / coverage reports
 htmlcov/

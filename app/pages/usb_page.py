@@ -12,7 +12,7 @@ from qfluentwidgets import (
 )
 
 from app.workers.usb_worker import (
-    ListUsbWorker, BindUsbWorker, AttachUsbWorker, DetachUsbWorker,
+    ListUsbWorker, BindUsbWorker, AttachUsbWorker, DetachUsbWorker, UnbindUsbWorker,
 )
 from app.workers.wsl_worker import ListInstalledWorker
 
@@ -110,6 +110,11 @@ class UsbPage(ScrollArea):
         self._detach_btn.setToolTip("Detach device from WSL")
         self._detach_btn.clicked.connect(self._detach_selected)
         action_bar.addWidget(self._detach_btn)
+
+        self._unbind_btn = PushButton(FluentIcon.UNPIN, "Unbind")
+        self._unbind_btn.setToolTip("Unbind selected device (stop sharing with WSL)")
+        self._unbind_btn.clicked.connect(self._unbind_selected)
+        action_bar.addWidget(self._unbind_btn)
 
         action_bar.addStretch()
         self._layout.addLayout(action_bar)
@@ -230,6 +235,15 @@ class UsbPage(ScrollArea):
         # After detach the device re-enumerates at USB level; delay the refresh
         # so usbipd has time to update its device list before we query it.
         worker.done.connect(lambda ok, msg: self._on_action_done(ok, msg, refresh_delay_ms=3000))
+        self._workers.append(worker)
+        worker.start()
+
+    def _unbind_selected(self):
+        dev = self._selected_device()
+        if not dev:
+            return
+        worker = UnbindUsbWorker(dev.busid, parent=self)
+        worker.done.connect(self._on_action_done)
         self._workers.append(worker)
         worker.start()
 

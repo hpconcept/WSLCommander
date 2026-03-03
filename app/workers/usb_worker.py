@@ -39,10 +39,12 @@ class ListUsbWorker(QThread):
             return
 
         devices: List[UsbDevice] = []
+        seen_busids: set[str] = set()
         lines = stdout.splitlines()
 
-        # Parse only the "Connected:" section
-        in_connected_section = False
+        # Parse both "Connected:" and "Persisted:" sections so devices that
+        # move to Persisted after a detach are still visible in the table.
+        in_section = False
         header_found = False
 
         for line in lines:
@@ -50,22 +52,20 @@ class ListUsbWorker(QThread):
             if not stripped:
                 continue
 
-            # Check for section headers
-            if stripped.lower().startswith("connected:"):
-                in_connected_section = True
+            # Detect any recognised section header
+            lower = stripped.lower()
+            if lower.startswith("connected:") or lower.startswith("persisted:"):
+                in_section = True
                 header_found = False
                 continue
-            elif stripped.lower().startswith("persisted:"):
-                # Stop parsing when we hit the Persisted section
-                break
 
-            # Look for the column header in the Connected section
-            if in_connected_section and "BUSID" in stripped.upper() and "STATE" in stripped.upper():
+            # Look for the column header row (BUSID … STATE)
+            if in_section and "BUSID" in stripped.upper() and "STATE" in stripped.upper():
                 header_found = True
                 continue
 
             # Parse device rows after the header
-            if in_connected_section and header_found:
+            if in_section and header_found:
                 # Split on 2+ spaces to handle spaces in device names
                 parts = re.split(r"\s{2,}", stripped)
                 if len(parts) >= 3:
@@ -73,6 +73,10 @@ class ListUsbWorker(QThread):
                     # Skip if it's not a valid BUSID format (e.g., x-y)
                     if not re.match(r"^\d+-\d+", busid):
                         continue
+                    # Avoid duplicates (same busid can appear in both sections)
+                    if busid in seen_busids:
+                        continue
+                    seen_busids.add(busid)
                     # parts[1] is VID:PID, parts[2] is DEVICE, parts[3] is STATE
                     description = parts[2].strip() if len(parts) > 2 else parts[1].strip()
                     state = parts[3].strip() if len(parts) > 3 else "Unknown"
@@ -138,4 +142,22 @@ class DetachUsbWorker(QThread):
             self.done.emit(True, f"Device {self.busid} detached successfully.")
         else:
             self.done.emit(False, msg or f"Failed to detach device {self.busid}.")
+
+
+class UnbindUsbWorker(QThread):
+    """Unbinds a USB device via `usbipd unbind --busid <id>`."""
+    done = pyqtSignal(bool, str)
+
+    def __init__(self, busid: str, parent=None):
+        super().__init__(parent)
+        self.busid = busid
+
+    def run(self):
+        rc, stdout, stderr = _run(["usbipd.exe", "unbind", "--busid", self.busid])
+        msg = stdout or stderr
+        if rc == 0:
+            self.done.emit(True, f"Device {self.busid} unbound successfully.")
+        else:
+            self.done.emit(False, msg or f"Failed to unbind device {self.busid}.")
+
 

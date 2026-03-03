@@ -26,6 +26,7 @@ class UsbPage(ScrollArea):
         self._workers = []
         self._devices = []
         self._distros = []
+        self._last_selected_busid: str | None = None  # remember selection across refreshes
 
         self._content = QWidget()
         self._content.setObjectName("usbContent")
@@ -157,6 +158,13 @@ class UsbPage(ScrollArea):
             self._table.setItem(row, 3, QTableWidgetItem(""))
         self._table.resizeRowsToContents()
 
+        # Restore the previously selected device (if it still exists after refresh)
+        if self._last_selected_busid:
+            for row, dev in enumerate(self._devices):
+                if dev.busid == self._last_selected_busid:
+                    self._table.selectRow(row)
+                    break
+
     def _on_usb_error(self, msg):
         InfoBar.warning(
             title="USB Warning",
@@ -183,7 +191,9 @@ class UsbPage(ScrollArea):
             return None
         row = self._table.currentRow()
         if row < len(self._devices):
-            return self._devices[row]
+            dev = self._devices[row]
+            self._last_selected_busid = dev.busid  # remember for post-refresh restore
+            return dev
         return None
 
     def _selected_distro(self) -> str:

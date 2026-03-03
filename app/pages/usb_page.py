@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QHeaderView, QAbstractItemView,
@@ -227,11 +227,13 @@ class UsbPage(ScrollArea):
         if not dev:
             return
         worker = DetachUsbWorker(dev.busid, parent=self)
-        worker.done.connect(self._on_action_done)
+        # After detach the device re-enumerates at USB level; delay the refresh
+        # so usbipd has time to update its device list before we query it.
+        worker.done.connect(lambda ok, msg: self._on_action_done(ok, msg, refresh_delay_ms=3000))
         self._workers.append(worker)
         worker.start()
 
-    def _on_action_done(self, success: bool, msg: str):
+    def _on_action_done(self, success: bool, msg: str, refresh_delay_ms: int = 0):
         if success:
             InfoBar.success(
                 title="Success", content=msg,
@@ -248,5 +250,8 @@ class UsbPage(ScrollArea):
                 position=InfoBarPosition.TOP,
                 duration=6000, parent=self,
             )
-        self.refresh()
+        if refresh_delay_ms > 0:
+            QTimer.singleShot(refresh_delay_ms, self.refresh)
+        else:
+            self.refresh()
 

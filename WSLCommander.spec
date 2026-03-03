@@ -15,7 +15,7 @@ a = Analysis(
     datas=[
         # Application assets
         ('assets/distros/*.png', 'assets/distros'),
-        ('assets/icon/*.png',    'assets/icon'),
+        ('assets/icon/*.ico',    'assets/icon'),
         # qfluentwidgets bundled resources
         *fluent_datas,
     ],
@@ -51,7 +51,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='assets/icon/icon.png',            # taskbar / exe icon
+    icon='assets/icon/icon.ico',            # taskbar / exe icon
 )
 
 coll = COLLECT(

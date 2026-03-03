@@ -18,8 +18,10 @@ def main():
     app.setApplicationName("WSL Commander")
     app.setApplicationDisplayName("WSL Commander")
 
-    # Set application icon
-    icon_path = os.path.join(os.path.dirname(__file__), "assets", "icon", "icon.png")
+    # Set application icon – prefer .ico (multi-resolution) over .png
+    icon_path = os.path.join(os.path.dirname(__file__), "assets", "icon", "icon.ico")
+    if not os.path.exists(icon_path):
+        icon_path = os.path.join(os.path.dirname(__file__), "assets", "icon", "icon.png")
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
 

@@ -14,6 +14,7 @@ _KEYWORD_MAP = [
     ("oracle",   "oracle.png"),
     ("opensuse", "opensuse.png"),
     ("suse",     "opensuse.png"),
+    ("alma",     "alma.png"),
 ]
 
 _FALLBACK = "linux.png"

@@ -30,8 +30,6 @@ def _run(args: list[str], timeout: int = 30) -> tuple[int, str, str]:
         return -1, "", "wsl.exe not found"
     except subprocess.TimeoutExpired:
         return -1, "", "Command timed out"
-    except subprocess.TimeoutExpired:
-        return -1, "", "Command timed out"
 
 
 class ListInstalledWorker(QThread):
@@ -43,6 +41,13 @@ class ListInstalledWorker(QThread):
         rc, stdout, stderr = _run(["wsl.exe", "--list", "--verbose"])
         if rc != 0 and not stdout:
             self.error.emit(stderr or "Failed to list distributions")
+            return
+
+        # When no distributions are installed, WSL outputs an informational
+        # message rather than a table.  Detect this early and return empty.
+        stdout_clean = re.sub(r"[^\x20-\x7E\r\n]", "", stdout)
+        if "no installed distributions" in stdout_clean.lower():
+            self.result.emit([])
             return
 
         distros: List[Distro] = []
@@ -58,6 +63,10 @@ class ListInstalledWorker(QThread):
             if len(parts) < 3:
                 continue
             name, state, version = parts[0], parts[1], parts[2]
+            # Skip lines that look like informational messages rather than
+            # distro entries (state must be one of the known WSL states).
+            if state.lower() not in ("running", "stopped"):
+                continue
             distros.append(Distro(
                 name=name,
                 state=state,

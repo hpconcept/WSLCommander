@@ -1,3 +1,4 @@
+from PyQt6.QtWidgets import QApplication
 from qfluentwidgets import FluentWindow, FluentIcon
 
 from app.pages.distros_page import DistrosPage
@@ -15,6 +16,16 @@ class MainWindow(FluentWindow):
         self.setWindowTitle("WSL Commander")
         self.setMinimumSize(900, 650)
         self.resize(1100, 720)
+
+        # Centre on the screen that contains the cursor (handles multi-monitor)
+        screen = QApplication.screenAt(QApplication.screens()[0].geometry().center())
+        if screen is None:
+            screen = QApplication.primaryScreen()
+        geo = screen.availableGeometry()
+        self.move(
+            geo.center().x() - self.width() // 2,
+            geo.center().y() - self.height() // 2,
+        )
 
 
     def _init_navigation(self):

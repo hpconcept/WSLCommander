@@ -1,6 +1,6 @@
 import os
 
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -134,6 +134,14 @@ class DistrosPage(ScrollArea):
         self.setObjectName("DistrosPage")
         self._workers = []
 
+        # Timer used to poll the distro list after a terminal launch so the
+        # status badge updates once the distribution transitions to "Running".
+        self._poll_timer = QTimer(self)
+        self._poll_timer.setInterval(2000)          # check every 2 s
+        self._poll_timer.timeout.connect(self.refresh)
+        self._poll_count = 0
+        self._POLL_MAX = 15                         # stop after 30 s
+
         # Scroll content
         self._content = QWidget()
         self._content.setObjectName("distrosContent")
@@ -193,10 +201,18 @@ class DistrosPage(ScrollArea):
             empty = BodyLabel("No WSL distributions found. Go to the Install tab to add one.")
             empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self._cards_layout.addWidget(empty)
-            return
-        for d in distros:
-            card = DistroCard(d, self)
-            self._cards_layout.addWidget(card)
+        else:
+            for d in distros:
+                card = DistroCard(d, self)
+                self._cards_layout.addWidget(card)
+
+        # Stop polling once we see a running distro, or after the max attempts
+        if self._poll_timer.isActive():
+            self._poll_count += 1
+            any_running = any(d.state.lower() == "running" for d in distros)
+            if any_running or self._poll_count >= self._POLL_MAX:
+                self._poll_timer.stop()
+                self._poll_count = 0
 
     def _on_error(self, msg):
         InfoBar.error(
@@ -260,9 +276,30 @@ class DistrosPage(ScrollArea):
 
     def launch_terminal(self, name: str):
         worker = LaunchDistroTerminalWorker(name, self)
-        worker.done.connect(self._on_action_done)
+        worker.done.connect(self._on_launch_done)
         self._workers.append(worker)
         worker.start()
+
+    def _on_launch_done(self, success: bool, msg: str):
+        if success:
+            InfoBar.success(
+                title="Success", content=msg,
+                orient=Qt.Orientation.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=3000, parent=self,
+            )
+            # Start polling so the status badge updates once the distro is running
+            self._poll_count = 0
+            self._poll_timer.start()
+        else:
+            InfoBar.error(
+                title="Error", content=msg,
+                orient=Qt.Orientation.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=5000, parent=self,
+            )
 
     def _on_action_done(self, success: bool, msg: str):
         if success:

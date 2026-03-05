@@ -1,17 +1,16 @@
 import os
 
-from PyQt6.QtCore import Qt, QSize, QTimer
-from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QScrollArea, QFrame, QSizePolicy, QSpacerItem, QFileDialog, QGridLayout,
+    QSizePolicy, QSpacerItem, QFileDialog, QGridLayout,
 )
 from qfluentwidgets import (
     ScrollArea, TitleLabel, SubtitleLabel, BodyLabel,
     PrimaryPushButton, PushButton, ToolButton,
     InfoBar, InfoBarPosition, IndeterminateProgressBar,
-    CardWidget, FluentIcon, setTheme, isDarkTheme,
-    SimpleCardWidget, IconWidget, CaptionLabel,
+    CardWidget, FluentIcon, CaptionLabel,
     MessageBox,
 )
 

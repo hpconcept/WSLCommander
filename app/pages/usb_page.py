@@ -8,7 +8,7 @@ from qfluentwidgets import (
     PrimaryPushButton, PushButton, ToolButton,
     TableWidget, ComboBox, CheckBox,
     InfoBar, InfoBarPosition, IndeterminateProgressBar,
-    FluentIcon, CardWidget, SubtitleLabel,
+    FluentIcon, CardWidget,
 )
 
 from app.workers.usb_worker import (

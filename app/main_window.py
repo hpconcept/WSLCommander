@@ -49,6 +49,15 @@ class MainWindow(FluentWindow):
             text="Install",
         )
 
+        # Auto-refresh distributions page after an install/import completes
+        # Import (.tar) is synchronous – do a direct refresh
+        self.install_page.distro_installed.connect(self.distros_page.refresh)
+        # Catalogue install launches an external terminal – start polling until
+        # the new distro appears
+        self.install_page.install_launched.connect(
+            self.distros_page.start_install_polling
+        )
+
         self.navigationInterface.setCurrentItem(self.distros_page.objectName())
 
 

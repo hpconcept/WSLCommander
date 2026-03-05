@@ -141,6 +141,7 @@ class DistrosPage(ScrollArea):
         self._poll_timer.timeout.connect(self.refresh)
         self._poll_count = 0
         self._POLL_MAX = 15                         # stop after 30 s
+        self._last_distro_count = 0                 # used to detect newly installed distros
 
         # Scroll content
         self._content = QWidget()
@@ -195,6 +196,17 @@ class DistrosPage(ScrollArea):
         self._workers.append(worker)
         worker.start()
 
+    def start_install_polling(self):
+        """Start long-running polling to detect a newly installed distro.
+
+        The catalogue installer runs in an external terminal so we don't know
+        when it completes.  Poll every 5 s for up to 10 minutes (120 attempts).
+        """
+        self._poll_count = 0
+        self._POLL_MAX = 120   # 10 min @ 5 s interval
+        self._poll_timer.setInterval(5000)
+        self._poll_timer.start()
+
     def _on_distros_loaded(self, distros):
         self._clear_cards()
         if not distros:
@@ -206,13 +218,19 @@ class DistrosPage(ScrollArea):
                 card = DistroCard(d, self)
                 self._cards_layout.addWidget(card)
 
-        # Stop polling once we see a running distro, or after the max attempts
+        # Stop polling once we see a running distro, a new distro appeared, or after max attempts
         if self._poll_timer.isActive():
             self._poll_count += 1
             any_running = any(d.state.lower() == "running" for d in distros)
-            if any_running or self._poll_count >= self._POLL_MAX:
+            new_distro_appeared = len(distros) > self._last_distro_count
+            if any_running or new_distro_appeared or self._poll_count >= self._POLL_MAX:
                 self._poll_timer.stop()
                 self._poll_count = 0
+                # Restore default polling settings for terminal-launch polling
+                self._poll_timer.setInterval(2000)
+                self._POLL_MAX = 15
+
+        self._last_distro_count = len(distros)
 
     def _on_error(self, msg):
         InfoBar.error(

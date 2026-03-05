@@ -1,6 +1,6 @@
 import os
 
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog,
@@ -76,6 +76,10 @@ class AvailableDistroListItem(CardWidget):
 class InstallPage(ScrollArea):
     """Page for browsing/installing new WSL distributions, or importing from a .tar file."""
 
+    # Emitted after a distribution is fully installed/imported (e.g. import from .tar)
+    distro_installed = pyqtSignal()
+    # Emitted when a catalogue installer terminal has been launched (install is async)
+    install_launched = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("InstallPage")
@@ -358,6 +362,7 @@ class InstallPage(ScrollArea):
                 orient=Qt.Orientation.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=5000, parent=self,
             )
+            self.install_launched.emit()
         else:
             InfoBar.error(
                 title="Failed to Launch Installer", content=msg,
@@ -421,6 +426,7 @@ class InstallPage(ScrollArea):
                 orient=Qt.Orientation.Horizontal, isClosable=True,
                 position=InfoBarPosition.TOP, duration=5000, parent=self,
             )
+            self.distro_installed.emit()
         else:
             InfoBar.error(
                 title="Import Failed", content=msg,

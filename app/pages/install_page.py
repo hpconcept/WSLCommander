@@ -61,16 +61,30 @@ class AvailableDistroListItem(CardWidget):
         layout.addLayout(info_layout)
         layout.addStretch()
 
+        # Inline Install button – hidden until card is selected
+        self._install_btn = PrimaryPushButton(FluentIcon.DOWNLOAD, "Install")
+        self._install_btn.setFixedWidth(120)
+        self._install_btn.setVisible(False)
+        self._install_btn.clicked.connect(self._on_install_clicked)
+        layout.addWidget(self._install_btn)
+
+    def _on_install_clicked(self):
+        self.parent_page._install_selected()
+
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
         self.parent_page.select_card(self)
 
     def set_selected(self, selected: bool):
         self._selected = selected
+        self._install_btn.setVisible(selected)
         if selected:
             self.setStyleSheet("CardWidget { border: 2px solid #0078D4; border-radius: 8px; }")
         else:
             self.setStyleSheet("")
+
+    def set_install_enabled(self, enabled: bool):
+        self._install_btn.setEnabled(enabled)
 
 
 class InstallPage(ScrollArea):
@@ -194,17 +208,6 @@ class InstallPage(ScrollArea):
         self._list_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(self._list_widget)
 
-        # Install action row
-        install_row = QHBoxLayout()
-        self._selected_label = BodyLabel("No distribution selected.")
-        install_row.addWidget(self._selected_label)
-        install_row.addStretch()
-        self._install_btn = PrimaryPushButton(FluentIcon.DOWNLOAD, "Install")
-        self._install_btn.setEnabled(False)
-        self._install_btn.setFixedWidth(140)
-        self._install_btn.clicked.connect(self._install_selected)
-        install_row.addWidget(self._install_btn)
-        layout.addLayout(install_row)
 
         return panel
 
@@ -324,8 +327,6 @@ class InstallPage(ScrollArea):
             if item.widget():
                 item.widget().deleteLater()
         self._selected_card = None
-        self._install_btn.setEnabled(False)
-        self._selected_label.setText("No distribution selected.")
 
     def _filter(self, text: str):
         lower = text.lower()
@@ -341,21 +342,20 @@ class InstallPage(ScrollArea):
             self._selected_card.set_selected(False)
         self._selected_card = card
         card.set_selected(True)
-        self._selected_label.setText(f"Selected: {card.friendly_name}")
-        self._install_btn.setEnabled(True)
 
     def _install_selected(self):
         if not self._selected_card:
             return
         name = self._selected_card.distro_name
-        self._install_btn.setEnabled(False)
+        self._selected_card.set_install_enabled(False)
         worker = LaunchInstallTerminalWorker(name, self)
         worker.done.connect(self._on_install_done)
         self._workers.append(worker)
         worker.start()
 
     def _on_install_done(self, success: bool, msg: str):
-        self._install_btn.setEnabled(True)
+        if self._selected_card:
+            self._selected_card.set_install_enabled(True)
         if success:
             InfoBar.success(
                 title="Installer Launched", content=msg,

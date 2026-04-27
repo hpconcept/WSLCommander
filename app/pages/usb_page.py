@@ -13,6 +13,7 @@ from qfluentwidgets import (
 
 from app.workers.usb_worker import (
     ListUsbWorker, BindUsbWorker, AttachUsbWorker, DetachUsbWorker, UnbindUsbWorker,
+    AutoAttachWorker,
 )
 from app.workers.wsl_worker import ListInstalledWorker
 
@@ -26,7 +27,13 @@ class UsbPage(ScrollArea):
         self._workers = []
         self._devices = []
         self._distros = []
+        self._auto_attach_workers: dict[str, AutoAttachWorker] = {}
         self._last_selected_busid: str | None = None  # remember selection across refreshes
+
+        # Periodic poll timer — keeps the table in sync while auto-attach is active
+        self._poll_timer = QTimer(self)
+        self._poll_timer.setInterval(3000)
+        self._poll_timer.timeout.connect(self._poll_refresh)
 
         self._content = QWidget()
         self._content.setObjectName("usbContent")
@@ -78,6 +85,12 @@ class UsbPage(ScrollArea):
         self._force_check = CheckBox("Force bind")
         self._force_check.setToolTip("Pass --force flag to usbipd bind")
         sel_layout.addWidget(self._force_check)
+
+        self._unplugged_check = CheckBox("Unplugged")
+        self._unplugged_check.setToolTip(
+            "Allow auto-attach for devices not currently plugged in"
+        )
+        sel_layout.addWidget(self._unplugged_check)
         sel_layout.addStretch()
         self._layout.addWidget(sel_card)
 
@@ -92,6 +105,7 @@ class UsbPage(ScrollArea):
         self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setMinimumHeight(320)
+        self._table.itemSelectionChanged.connect(self._on_selection_changed)
         self._layout.addWidget(self._table)
 
         # Action toolbar
@@ -105,6 +119,14 @@ class UsbPage(ScrollArea):
         self._attach_btn.setToolTip("Attach the bound device to the selected WSL distribution")
         self._attach_btn.clicked.connect(self._attach_selected)
         action_bar.addWidget(self._attach_btn)
+
+        self._auto_attach_btn = PushButton(FluentIcon.PIN, "Auto-Attach")
+        self._auto_attach_btn.setToolTip(
+            "Automatically re-attach device to WSL whenever it is disconnected or re-plugged"
+        )
+        self._auto_attach_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._auto_attach_btn.clicked.connect(self._toggle_auto_attach)
+        action_bar.addWidget(self._auto_attach_btn)
 
         self._detach_btn = PushButton(FluentIcon.REMOVE, "Detach")
         self._detach_btn.setToolTip("Detach device from WSL")
@@ -135,6 +157,20 @@ class UsbPage(ScrollArea):
         self._workers.append(wsl_w)
         wsl_w.start()
 
+    def _poll_refresh(self):
+        """Lightweight refresh — only re-queries the USB device list."""
+        usb_w = ListUsbWorker(self)
+        usb_w.result.connect(self._on_usb_loaded)
+        self._workers.append(usb_w)
+        usb_w.start()
+
+    def _update_poll_timer(self):
+        """Start or stop the poll timer based on active auto-attach workers."""
+        if self._auto_attach_workers and not self._poll_timer.isActive():
+            self._poll_timer.start()
+        elif not self._auto_attach_workers and self._poll_timer.isActive():
+            self._poll_timer.stop()
+
     def _on_distros_loaded(self, distros):
         self._distros = distros
         self._distro_combo.clear()
@@ -154,6 +190,13 @@ class UsbPage(ScrollArea):
             # Colour-code state
             from PyQt6.QtGui import QColor
             state_lower = dev.state.lower()
+            display_state = dev.state
+            if dev.busid in self._auto_attach_workers:
+                if "attached" in state_lower:
+                    display_state += " (auto)"
+                else:
+                    display_state += " (auto-waiting)"
+            state_item.setText(display_state)
             if "attached" in state_lower:
                 state_item.setForeground(QColor("#107C10"))
             elif "not shared" in state_lower:
@@ -171,6 +214,8 @@ class UsbPage(ScrollArea):
                 if dev.busid == self._last_selected_busid:
                     self._table.selectRow(row)
                     break
+
+        self._on_selection_changed()
 
     def _on_usb_error(self, msg):
         InfoBar.warning(
@@ -233,6 +278,9 @@ class UsbPage(ScrollArea):
         dev = self._selected_device()
         if not dev:
             return
+        # Stop auto-attach first — otherwise it will immediately re-attach.
+        if dev.busid in self._auto_attach_workers:
+            self._stop_auto_attach(dev.busid)
         worker = DetachUsbWorker(dev.busid, parent=self)
         # After detach the device re-enumerates at USB level; delay the refresh
         # so usbipd has time to update its device list before we query it.
@@ -248,6 +296,88 @@ class UsbPage(ScrollArea):
         worker.done.connect(self._on_action_done)
         self._workers.append(worker)
         worker.start()
+
+    def _toggle_auto_attach(self):
+        dev = self._selected_device()
+        if not dev:
+            return
+        # Stop if already running
+        if dev.busid in self._auto_attach_workers:
+            self._stop_auto_attach(dev.busid)
+            return
+        # Start auto-attach
+        distro = self._selected_distro()
+        unplugged = self._unplugged_check.isChecked()
+        worker = AutoAttachWorker(
+            dev.busid, distro=distro, unplugged=unplugged, parent=self,
+        )
+        worker.started.connect(self._on_auto_attach_started)
+        worker.stopped.connect(self._on_auto_attach_stopped)
+        worker.error.connect(self._on_auto_attach_error)
+        self._auto_attach_workers[dev.busid] = worker
+        worker.start()
+
+    def _stop_auto_attach(self, busid: str):
+        worker = self._auto_attach_workers.pop(busid, None)
+        if worker:
+            worker.stop()
+
+    def _on_auto_attach_started(self, busid: str):
+        InfoBar.success(
+            title="Auto-Attach",
+            content=f"Auto-attach started for device {busid}.",
+            orient=Qt.Orientation.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=3000, parent=self,
+        )
+        QTimer.singleShot(1500, self.refresh)
+        self._update_poll_timer()
+
+    def _on_auto_attach_stopped(self, busid: str):
+        self._auto_attach_workers.pop(busid, None)
+        self._update_poll_timer()
+        InfoBar.info(
+            title="Auto-Attach",
+            content=f"Auto-attach stopped for device {busid}.",
+            orient=Qt.Orientation.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=3000, parent=self,
+        )
+        self.refresh()
+
+    def _on_auto_attach_error(self, busid: str, msg: str):
+        self._auto_attach_workers.pop(busid, None)
+        self._update_poll_timer()
+        InfoBar.error(
+            title="Auto-Attach Error",
+            content=msg,
+            orient=Qt.Orientation.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=6000, parent=self,
+        )
+        self.refresh()
+
+    def _on_selection_changed(self):
+        row = self._table.currentRow()
+        if row < 0 or row >= len(self._devices):
+            self._auto_attach_btn.setText("Auto-Attach")
+            self._auto_attach_btn.setEnabled(False)
+            return
+        dev = self._devices[row]
+        self._last_selected_busid = dev.busid
+        state_lower = dev.state.lower()
+        if dev.busid in self._auto_attach_workers:
+            self._auto_attach_btn.setText("Stop Auto-Attach")
+            self._auto_attach_btn.setEnabled(True)
+        elif "not shared" in state_lower:
+            self._auto_attach_btn.setText("Auto-Attach")
+            self._auto_attach_btn.setEnabled(False)
+        else:
+            self._auto_attach_btn.setText("Auto-Attach")
+            self._auto_attach_btn.setEnabled(True)
 
     def _on_action_done(self, success: bool, msg: str, refresh_delay_ms: int = 0):
         if success:
@@ -270,4 +400,16 @@ class UsbPage(ScrollArea):
             QTimer.singleShot(refresh_delay_ms, self.refresh)
         else:
             self.refresh()
+
+    def _cleanup_auto_attach(self):
+        for busid in list(self._auto_attach_workers):
+            self._stop_auto_attach(busid)
+
+    def closeEvent(self, a0):
+        self._cleanup_auto_attach()
+        super().closeEvent(a0)
+
+    def deleteLater(self):
+        self._cleanup_auto_attach()
+        super().deleteLater()
 

@@ -162,3 +162,69 @@ class UnbindUsbWorker(QThread):
             self.done.emit(False, msg or f"Failed to unbind device {self.busid}.")
 
 
+class AutoAttachWorker(QThread):
+    """Long-running worker that auto-attaches a USB device to WSL.
+
+    Spawns ``usbipd attach --wsl --auto-attach`` as a child process and
+    monitors it until :meth:`stop` is called or the process exits on its own.
+    """
+    started = pyqtSignal(str)   # busid
+    stopped = pyqtSignal(str)   # busid
+    error = pyqtSignal(str, str)  # busid, message
+
+    def __init__(self, busid: str, distro: str = "", unplugged: bool = False, parent=None):
+        super().__init__(parent)
+        self.busid = busid
+        self.distro = distro
+        self.unplugged = unplugged
+        self._process: subprocess.Popen | None = None
+        self._stop_requested = False
+
+    def run(self):
+        args = ["usbipd.exe", "attach", "--wsl", "--auto-attach", "--busid", self.busid]
+        if self.distro:
+            args += ["--distribution", self.distro]
+        if self.unplugged:
+            args.append("--unplugged")
+        try:
+            self._process = subprocess.Popen(
+                args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+        except FileNotFoundError:
+            self.error.emit(self.busid, "usbipd.exe not found. Please install usbipd-win.")
+            return
+
+        self.started.emit(self.busid)
+
+        # Block until the process exits (or is killed via stop()).
+        self._process.wait()
+
+        if self._stop_requested:
+            self.stopped.emit(self.busid)
+        else:
+            stderr = ""
+            if self._process.stderr:
+                raw = self._process.stderr.read()
+                stderr = raw.decode("utf-8", errors="replace").strip() if raw else ""
+            if self._process.returncode == 0:
+                self.stopped.emit(self.busid)
+            else:
+                self.error.emit(
+                    self.busid,
+                    stderr or f"Auto-attach for {self.busid} exited with code {self._process.returncode}.",
+                )
+
+    def stop(self):
+        """Terminate the auto-attach process."""
+        self._stop_requested = True
+        if self._process and self._process.poll() is None:
+            self._process.terminate()
+            try:
+                self._process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self._process.kill()
+
+

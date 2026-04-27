@@ -5,6 +5,7 @@ from typing import List
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from app.models.usb_device import UsbDevice
+from app.utils.elevation import run_or_elevate
 
 
 def _run(args: list[str], timeout: int = 20) -> tuple[int, str, str]:
@@ -98,7 +99,7 @@ class BindUsbWorker(QThread):
         args = ["usbipd.exe", "bind", "--busid", self.busid]
         if self.force:
             args.append("--force")
-        rc, stdout, stderr = _run(args)
+        rc, stdout, stderr = run_or_elevate(args)
         msg = stdout or stderr
         if rc == 0:
             self.done.emit(True, f"Device {self.busid} bound successfully.")
@@ -153,7 +154,7 @@ class UnbindUsbWorker(QThread):
         self.busid = busid
 
     def run(self):
-        rc, stdout, stderr = _run(["usbipd.exe", "unbind", "--busid", self.busid])
+        rc, stdout, stderr = run_or_elevate(["usbipd.exe", "unbind", "--busid", self.busid])
         msg = stdout or stderr
         if rc == 0:
             self.done.emit(True, f"Device {self.busid} unbound successfully.")

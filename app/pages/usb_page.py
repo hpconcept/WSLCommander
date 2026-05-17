@@ -156,6 +156,8 @@ class UsbPage(ScrollArea):
             state_lower = dev.state.lower()
             if "attached" in state_lower:
                 state_item.setForeground(QColor("#107C10"))
+            elif "not shared" in state_lower:
+                state_item.setForeground(QColor("#CA5010"))
             elif "shared" in state_lower or "bound" in state_lower:
                 state_item.setForeground(QColor("#0078D4"))
             self._table.setItem(row, 2, state_item)

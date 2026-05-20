@@ -16,6 +16,7 @@ from app.workers.usb_worker import (
     AutoAttachWorker,
 )
 from app.workers.wsl_worker import ListInstalledWorker
+from app.models.usb_device import UsbDevice
 
 
 class UsbPage(ScrollArea):
@@ -25,7 +26,7 @@ class UsbPage(ScrollArea):
         super().__init__(parent)
         self.setObjectName("UsbPage")
         self._workers = []
-        self._devices = []
+        self._devices: dict[str, UsbDevice] = {}  # busid -> UsbDevice
         self._distros = []
         self._auto_attach_workers: dict[str, AutoAttachWorker] = {}
         self._last_selected_busid: str | None = None  # remember selection across refreshes
@@ -105,6 +106,7 @@ class UsbPage(ScrollArea):
         self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setMinimumHeight(320)
+        self._table.setSortingEnabled(True)
         self._table.itemSelectionChanged.connect(self._on_selection_changed)
         self._layout.addWidget(self._table)
 
@@ -179,7 +181,8 @@ class UsbPage(ScrollArea):
             self._distro_combo.addItem(d.name)
 
     def _on_usb_loaded(self, devices):
-        self._devices = devices
+        self._devices = {dev.busid: dev for dev in devices}
+        self._table.setSortingEnabled(False)
         self._table.setRowCount(0)
         for row, dev in enumerate(devices):
             self._table.insertRow(row)
@@ -206,12 +209,14 @@ class UsbPage(ScrollArea):
             self._table.setItem(row, 2, state_item)
             # Empty actions column (handled via toolbar)
             self._table.setItem(row, 3, QTableWidgetItem(""))
+        self._table.setSortingEnabled(True)
         self._table.resizeRowsToContents()
 
         # Restore the previously selected device (if it still exists after refresh)
         if self._last_selected_busid:
-            for row, dev in enumerate(self._devices):
-                if dev.busid == self._last_selected_busid:
+            for row in range(self._table.rowCount()):
+                item = self._table.item(row, 0)
+                if item and item.text() == self._last_selected_busid:
                     self._table.selectRow(row)
                     break
 
@@ -242,10 +247,13 @@ class UsbPage(ScrollArea):
             )
             return None
         row = self._table.currentRow()
-        if row < len(self._devices):
-            dev = self._devices[row]
-            self._last_selected_busid = dev.busid  # remember for post-refresh restore
-            return dev
+        busid_item = self._table.item(row, 0)
+        if busid_item:
+            busid = busid_item.text()
+            dev = self._devices.get(busid)
+            if dev:
+                self._last_selected_busid = dev.busid
+                return dev
         return None
 
     def _selected_distro(self) -> str:
@@ -362,12 +370,18 @@ class UsbPage(ScrollArea):
 
     def _on_selection_changed(self):
         row = self._table.currentRow()
-        if row < 0 or row >= len(self._devices):
+        busid_item = self._table.item(row, 0) if row >= 0 else None
+        if not busid_item:
             self._auto_attach_btn.setText("Auto-Attach")
             self._auto_attach_btn.setEnabled(False)
             return
-        dev = self._devices[row]
-        self._last_selected_busid = dev.busid
+        busid = busid_item.text()
+        self._last_selected_busid = busid
+        dev = self._devices.get(busid)
+        if not dev:
+            self._auto_attach_btn.setText("Auto-Attach")
+            self._auto_attach_btn.setEnabled(False)
+            return
         state_lower = dev.state.lower()
         if dev.busid in self._auto_attach_workers:
             self._auto_attach_btn.setText("Stop Auto-Attach")

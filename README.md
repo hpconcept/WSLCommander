@@ -2,25 +2,32 @@
 
 A modern Windows desktop application for managing your **Windows Subsystem for Linux (WSL2)** distributions — built with Python and PyQt6 Fluent Widgets.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
-![Source License](https://img.shields.io/badge/Source%20License-MIT-green)
-![Binary License](https://img.shields.io/badge/Binary%20License-GPLv3-orange)
-
 ---
 
 ## Features
 
-- 📋 **View** all installed WSL distributions with live status and version info
-- ▶️ **Launch** a terminal for any distribution with a single click
-- ⭐ **Set** a distribution as the system default
-- ⏹️ **Stop** a running distribution
-- 🗑️ **Remove** a distribution
-- 💾 **Export** a distribution to a `.tar` archive for backup or transfer
-- 📦 **Install** new distributions from the official online catalogue
-- 📂 **Import** a distribution from a `.tar` archive with a custom name and install location
-- 🔌 **USB Sharing** — list connected USB devices and manage their attachment to WSL
-- 🎨 Modern Fluent Design UI with automatic light/dark theme support
+- View all installed WSL distributions with live status and version info
+- Launch a terminal for any distribution with a single click
+- Set a distribution as the system default
+- Stop a running distribution
+- Remove a distribution
+- Export a distribution to a `.tar` archive for backup or transfer
+- Install new distributions from the official online catalogue
+- Import a distribution from a `.tar` archive with a custom name and install location
+- Share USB devices with WSL, including bind, unbind, attach, detach, and auto-attach workflows
+- Browse USB devices in a sortable table with color-coded device states
+- Use a modern Fluent Design UI with automatic light/dark theme support
+
+## What's New Since v1.0.1
+
+- Added an inline **Install** button directly on the selected distribution card in the install catalogue.
+- Improved USB device visibility with color-coded state labels.
+- Added a sortable USB device table for easier browsing.
+- Added USB **Auto-Attach** support, including optional handling for unplugged devices.
+- Added automatic UAC elevation for USB bind and unbind operations when administrator rights are required.
+- Included minor code cleanup and maintenance updates.
+
+For a release-by-release history, see [`CHANGELOG.md`](./CHANGELOG.md). The draft release notes for `v1.1.0` are available in [`docs/release-notes-v1.1.0.md`](./docs/release-notes-v1.1.0.md).
 
 ---
 
@@ -64,13 +71,15 @@ Or download the installer from the [usbipd-win releases page](https://github.com
 
 > **Note:** Without `usbipd-win`, the USB page will still open but no devices will be listed and attach/detach actions will not be available.
 
+> **Note:** Binding and unbinding USB devices may trigger a Windows UAC prompt if WSL Commander is not already running with administrator privileges.
+
 ---
 
 ## Running the Application
 
 ### Option 1 — Pre-built Executable (no Python required)
 
-1. Download the latest release from the [Releases](../../releases) page.
+1. Download the latest release from the [GitHub Releases](https://github.com/hpconcept/WSLCommander/releases) page.
 2. Extract the zip archive.
 3. Run `WSLCommander.exe` from the extracted folder.
 
@@ -136,7 +145,7 @@ WSLCommander/
 │   ├── main_window.py        # Main application window
 │   ├── models/               # Data models (Distro, UsbDevice)
 │   ├── pages/                # UI pages (Distributions, Install, USB)
-│   ├── utils/                # Helpers (logo resolver)
+│   ├── utils/                # Helpers (logo resolution, elevation)
 │   └── workers/              # Background QThread workers (WSL, USB)
 ├── assets/
 │   ├── distros/              # Distribution logo images

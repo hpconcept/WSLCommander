@@ -31,5 +31,7 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: WSL Commander ${{ github.ref_name }}
+          body_path: docs/release-notes-${{ github.ref_name }}.md
           files: WSLCommander-${{ github.ref_name }}.zip
 

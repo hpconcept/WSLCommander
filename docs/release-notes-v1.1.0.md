@@ -34,25 +34,4 @@ This release builds on `v1.0.1` with a strong focus on USB device management and
 - Removed unused imports and performed minor internal cleanup.
 - Updated USB page screenshot to reflect the new color-coded states and UI improvements.
 
-## Suggested short release summary
-
-WSL Commander's next update focuses on usability improvements for USB sharing and distro installation. USB device management is now easier with color-coded states, sortable tables, automatic re-attach support, and UAC elevation for privileged actions. The distro catalogue also gets a cleaner inline install experience.
-
-## GitHub release body
-
-WSL Commander `v1.1.0` focuses on usability improvements for USB sharing and distro installation.
-
-### What's new
-
-- Color-coded USB device states
-- Sortable USB device table
-- USB auto-attach support, including unplugged-device support
-- Automatic UAC elevation for USB bind and unbind operations
-- Inline Install button on the selected distro card
-
-### Notes
-
-- USB sharing still requires [`usbipd-win`](https://github.com/dorssel/usbipd-win).
-- Binding and unbinding USB devices may prompt for administrator approval through Windows UAC.
-
 

@@ -18,7 +18,7 @@ A modern Windows desktop application for managing your **Windows Subsystem for L
 - Browse USB devices in a sortable table with color-coded device states
 - Use a modern Fluent Design UI with automatic light/dark theme support
 
-## What's New Since v1.0.1
+## What's New in v1.1.0
 
 - Added an inline **Install** button directly on the selected distribution card in the install catalogue.
 - Improved USB device visibility with color-coded state labels.
@@ -27,7 +27,7 @@ A modern Windows desktop application for managing your **Windows Subsystem for L
 - Added automatic UAC elevation for USB bind and unbind operations when administrator rights are required.
 - Included minor code cleanup and maintenance updates.
 
-For a release-by-release history, see [`CHANGELOG.md`](./CHANGELOG.md). The draft release notes for `v1.1.0` are available in [`docs/release-notes-v1.1.0.md`](./docs/release-notes-v1.1.0.md).
+For a release-by-release history, see [`CHANGELOG.md`](./CHANGELOG.md). The release notes for `v1.1.0` are available in [`docs/release-notes-v1.1.0.md`](./docs/release-notes-v1.1.0.md).
 
 ---
 
@@ -156,6 +156,8 @@ WSLCommander/
 ├── requirements.txt          # Runtime dependencies
 ├── requirements-dev.txt      # Dev/build dependencies (includes PyInstaller)
 ├── WSLCommander.spec         # PyInstaller build spec
+├── CHANGELOG.md              # Version history and release notes
+├── LICENSE                   # MIT License
 └── README.md
 ```
 

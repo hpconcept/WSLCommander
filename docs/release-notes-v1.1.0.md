@@ -32,6 +32,7 @@ This release builds on `v1.0.1` with a strong focus on USB device management and
 ### Maintenance
 
 - Removed unused imports and performed minor internal cleanup.
+- Updated USB page screenshot to reflect the new color-coded states and UI improvements.
 
 ## Suggested short release summary
 

@@ -21,7 +21,7 @@ The format is based loosely on Keep a Changelog and uses semantic versioning for
 ### Fixed
 - Minor internal cleanup and removal of unused imports.
 
-## [1.0.1] - 2026-06-04
+## [1.0.1] - 2026-03-05
 
 ### Added
 - Auto-refresh for the distros page after install and import actions.
@@ -30,7 +30,7 @@ The format is based loosely on Keep a Changelog and uses semantic versioning for
 ### Changed
 - Distros polling behavior now temporarily switches to long-running install-aware polling after catalogue installs.
 
-## [1.0.0] - 2026-06-04
+## [1.0.0] - 2026-02-27
 
 ### Added
 - Initial public release of WSL Commander.

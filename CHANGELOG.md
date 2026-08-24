@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based loosely on Keep a Changelog and uses semantic versioning for releases.
 
+## [Unreleased]
+
+### Added
+- **WSL container support** on the Distributions page, powered by Microsoft's
+  `wslc.exe` container CLI (ships with WSL 2.9.3+).
+  - Unified Distributions page with an **All / Distros Only / Containers Only** filter.
+  - Container cards showing name, image, status, and published-port summary.
+  - **Expandable container details** (ID, ports, volumes, environment with masked
+    secrets, network, restart policy, created time, and best-effort CPU/memory usage).
+  - Container actions: **Start**, **Stop**, **Remove**, and **Logs** viewer.
+- Session-mismatch hint: when no containers are visible but another `wslc` session with a
+  different elevation exists, an info bar suggests running WSL Commander as administrator (or as a
+  normal user) so the containers become visible.
+- Explicit Windows AppUserModelID so the app shows its own icon in the taskbar when run from source.
+- Graceful degradation: the container filter is hidden with an informational note
+  when a compatible WSL version isn't installed.
+
 ## [1.1.0] - 2026-06-04
 
 ### Added

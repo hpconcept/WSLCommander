@@ -16,6 +16,7 @@ A modern Windows desktop application for managing your **Windows Subsystem for L
 - Import a distribution from a `.tar` archive with a custom name and install location
 - Share USB devices with WSL, including bind, unbind, attach, detach, and auto-attach workflows
 - Browse USB devices in a sortable table with color-coded device states
+- Manage **WSL containers** alongside distributions on a unified page, with an All / Distros / Containers filter, expandable container details, logs, and start/stop/remove actions *(requires WSL 2.9.3+)*
 - Use a modern Fluent Design UI with automatic light/dark theme support
 
 ## What's New in v1.1.0
@@ -58,6 +59,16 @@ wsl --install
 ```
 
 Restart your machine before launching WSL Commander.
+
+### Enable WSL container support (optional)
+
+Container management uses Microsoft's `wslc.exe` container CLI, which ships with **WSL 2.9.3 or higher**. This is currently available as a pre-release. To enable it, open PowerShell and run:
+
+```powershell
+wsl --update --pre-release
+```
+
+Confirm your version with `wsl --version`. Without a compatible WSL version, WSL Commander still runs and manages distributions normally — the container filter is simply hidden.
 
 ### Install usbipd-win (for USB sharing)
 
@@ -143,10 +154,10 @@ The output will be placed in `dist\WSLCommander\WSLCommander.exe`.
 WSLCommander/
 ├── app/
 │   ├── main_window.py        # Main application window
-│   ├── models/               # Data models (Distro, UsbDevice)
+│   ├── models/               # Data models (Distro, Container, UsbDevice)
 │   ├── pages/                # UI pages (Distributions, Install, USB)
-│   ├── utils/                # Helpers (logo resolution, elevation)
-│   └── workers/              # Background QThread workers (WSL, USB)
+│   ├── utils/                # Helpers (logo resolution, elevation, wslc locator)
+│   └── workers/              # Background QThread workers (WSL, containers, USB)
 ├── assets/
 │   ├── distros/              # Distribution logo images
 │   └── icon/                 # Application icon

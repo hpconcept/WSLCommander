@@ -191,7 +191,25 @@ class EntityFilter(Enum):
 
 ## Notes
 
-- Wait for official Microsoft WSL container release before implementing
-- Monitor Microsoft documentation for exact CLI commands
+- ~~Wait for official Microsoft WSL container release before implementing~~ **Done.** The backend
+  is Microsoft's **`wslc.exe`** container CLI, which ships with WSL 2.9.3+ (currently pre-release,
+  enabled via `wsl --update --pre-release`). It lives in the WSL install directory
+  (`C:\Program Files\WSL\wslc.exe`) and is **not** on the system PATH — the app resolves its
+  absolute path via `app/utils/wslc_locator.py` and adds the WSL dir to its *own* process PATH only.
+- `wslc` supports `--format json` on `list`, `image list`, and `stats`, which the workers use for
+  reliable parsing.
+- Command surface used: `list --all --format json`, `inspect`, `start`, `stop`, `remove [-f]`,
+  `logs -n`, `stats --format json`.
+
+### Implementation status
+
+- **Phase 1 (Foundation): Done** — `Container` model, `container_worker.py`, unified page with
+  filter, basic container cards, start/stop/remove wiring, graceful degradation.
+- **Phase 2 (Enhanced cards): Done** — expandable cards with lazy `inspect` details (ports, volumes,
+  masked env, network, restart policy, created), logs viewer, best-effort resource stats,
+  expand-state preservation across refresh.
+- **Phase 3 (Container creation)** and **Phase 4 (Docker Compose)**: not yet implemented.
+
+- Monitor Microsoft documentation for changes to the exact `wslc` CLI commands and JSON schema.
 
 

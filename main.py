@@ -6,9 +6,26 @@ from PyQt6.QtWidgets import QApplication
 from qfluentwidgets import setTheme, Theme
 
 from app.main_window import MainWindow
+from app.utils.wslc_locator import ensure_wslc_on_process_path
 
 
 def main():
+    # Make the WSL container CLI (wslc.exe) resolvable for this process only,
+    # without modifying the user's persistent/system PATH.
+    ensure_wslc_on_process_path()
+
+    # Set an explicit AppUserModelID so Windows groups the app under its own
+    # taskbar entry and uses our window icon instead of the generic python.exe
+    # icon when running from source. Harmless on non-Windows platforms.
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "hpconcept.WSLCommander"
+            )
+        except Exception:
+            pass
+
     # Enable High-DPI support
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough

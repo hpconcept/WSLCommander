@@ -18,6 +18,7 @@ _KEYWORD_MAP = [
 ]
 
 _FALLBACK = "linux.png"
+_CONTAINER_LOGO = "docker.png"
 
 
 def resolve_logo_path(name: str) -> str:
@@ -27,4 +28,13 @@ def resolve_logo_path(name: str) -> str:
         if keyword in normalized:
             return os.path.join(_ASSETS_DIR, filename)
     return os.path.join(_ASSETS_DIR, _FALLBACK)
+
+
+def resolve_container_logo(image: str = "") -> str:
+    """Return the absolute path to the logo for a container.
+
+    Currently always the Docker logo; a future enhancement can inspect the
+    base image name and return a distro-specific icon.
+    """
+    return os.path.join(_ASSETS_DIR, _CONTAINER_LOGO)
 

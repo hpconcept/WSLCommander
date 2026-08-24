@@ -92,8 +92,9 @@ class Container:
     def from_json(cls, data: dict) -> "Container":
         """Build a Container from a single `wslc list --format json` entry.
 
-        Defensive against field-name variation; see item 15 (verify against a
-        live `wslc list --format json`).
+        The `wslc` list schema uses numeric enums (`State`, port `Protocol`)
+        and epoch timestamps; parsing is centralized here so schema quirks are
+        handled in one place.
         """
         cid = str(cls._first(data, "Id", "ID", "id", "ContainerId"))
         names = cls._first(data, "Names", "Name", "names", "name", default="")
@@ -104,10 +105,14 @@ class Container:
         name = name.lstrip("/").strip()
 
         image = str(cls._first(data, "Image", "image", "ImageName"))
-        state = str(cls._first(data, "State", "state", "Status", default=""))
-        status = str(cls._first(data, "Status", "status", default=""))
+        raw_state = cls._first(data, "State", "state", default="")
+        raw_status = cls._first(data, "Status", "status", default="")
+        state = _normalize_state(raw_state, raw_status)
+        # `wslc list` provides no human status string; derive one from state so
+        # the card shows e.g. "Running" instead of a raw enum value.
+        status = str(raw_status) if raw_status else state.capitalize()
         command = str(cls._first(data, "Command", "command", default=""))
-        created = str(cls._first(data, "CreatedAt", "Created", "created", default=""))
+        created = _format_created(cls._first(data, "CreatedAt", "Created", "created", default=""))
 
         ports = cls._parse_ports(cls._first(data, "Ports", "ports", default=[]))
 
@@ -115,7 +120,7 @@ class Container:
             id=cid,
             name=name or cid[:12],
             image=image,
-            state=_normalize_state(state, status),
+            state=state,
             status=status,
             command=command,
             created=created,
@@ -131,11 +136,15 @@ class Container:
         if isinstance(raw, list):
             for item in raw:
                 if isinstance(item, dict):
+                    host_ip = item.get("BindingAddress",
+                                       item.get("HostIp", item.get("host_ip", "")))
+                    proto = item.get("Protocol",
+                                     item.get("Type", item.get("protocol", "tcp")))
                     result.append(PortMapping(
-                        host_ip=str(item.get("HostIp", item.get("host_ip", "")) or ""),
+                        host_ip=str(host_ip or ""),
                         host_port=str(item.get("HostPort", item.get("host_port", "")) or ""),
                         container_port=str(item.get("ContainerPort", item.get("container_port", item.get("PrivatePort", ""))) or ""),
-                        protocol=str(item.get("Protocol", item.get("Type", item.get("protocol", "tcp"))) or "tcp"),
+                        protocol=_normalize_protocol(proto),
                     ))
                 elif isinstance(item, str):
                     result.extend(Container._parse_port_string(item))
@@ -174,12 +183,42 @@ class Container:
         )]
 
 
-def _normalize_state(state: str, status: str) -> str:
-    """Map assorted state/status strings to a canonical lowercase state."""
-    s = (state or "").lower()
+def _normalize_protocol(proto) -> str:
+    """Map a port protocol to a lowercase name.
+
+    `wslc list` reports the IANA protocol number (6=tcp, 17=udp); the string
+    forms are passed through.
+    """
+    numeric = {6: "tcp", 17: "udp", 132: "sctp"}
+    if isinstance(proto, bool):
+        return "tcp"
+    if isinstance(proto, int):
+        return numeric.get(proto, str(proto))
+    text = str(proto).strip().lower()
+    if text.isdigit():
+        return numeric.get(int(text), text)
+    return text or "tcp"
+
+
+def _normalize_state(state, status="") -> str:
+    """Map assorted state/status values to a canonical lowercase state.
+
+    `wslc list` reports `State` as a numeric enum
+    (1=created, 2=running, 3=exited); `inspect` reports a string.
+    """
+    numeric = {0: "unknown", 1: "created", 2: "running", 3: "exited", 4: "paused"}
+    if isinstance(state, bool):
+        state = ""
+    if isinstance(state, int):
+        return numeric.get(state, "unknown")
+
+    s = str(state or "").strip().lower()
+    if s.isdigit():
+        return numeric.get(int(s), "unknown")
+
     known = ("running", "exited", "created", "paused", "restarting", "dead", "stopped")
     if s in known:
-        return "running" if s == "running" else s
+        return s
     text = f"{state} {status}".lower()
     for candidate in known:
         if candidate in text:
@@ -187,3 +226,22 @@ def _normalize_state(state: str, status: str) -> str:
     if "up " in text:
         return "running"
     return s or "unknown"
+
+
+def _format_created(value) -> str:
+    """Format a created timestamp (epoch seconds or ISO string) for display."""
+    if value in (None, "", 0):
+        return ""
+    # Epoch seconds (int, or numeric string).
+    epoch = None
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        epoch = int(value)
+    elif isinstance(value, str) and value.isdigit():
+        epoch = int(value)
+    if epoch is not None:
+        try:
+            from datetime import datetime
+            return datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M:%S")
+        except (ValueError, OverflowError, OSError):
+            return str(value)
+    return str(value)

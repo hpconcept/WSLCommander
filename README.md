@@ -1,6 +1,6 @@
 # WSL Commander
 
-A modern Windows desktop application for managing your **Windows Subsystem for Linux (WSL2)** distributions — built with Python and PyQt6 Fluent Widgets.
+A modern Windows desktop application for managing your **Windows Subsystem for Linux (WSL)** distributions and **WSL Containers** — built with Python and PyQt6 Fluent Widgets.
 
 ---
 

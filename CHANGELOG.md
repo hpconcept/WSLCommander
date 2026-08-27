@@ -6,6 +6,8 @@ The format is based loosely on Keep a Changelog and uses semantic versioning for
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-27
+
 ### Added
 - **WSL container support** on the Distributions page, powered by Microsoft's
   `wslc.exe` container CLI (ships with WSL 2.9.3+).

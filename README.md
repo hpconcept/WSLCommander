@@ -19,16 +19,17 @@ A modern Windows desktop application for managing your **Windows Subsystem for L
 - Manage **WSL containers** alongside distributions on a unified page, with an All / Distros / Containers filter, expandable container details, logs, and start/stop/remove actions *(requires WSL 2.9.3+)*
 - Use a modern Fluent Design UI with automatic light/dark theme support
 
-## What's New in v1.1.0
+## What's New in v1.2.0
 
-- Added an inline **Install** button directly on the selected distribution card in the install catalogue.
-- Improved USB device visibility with color-coded state labels.
-- Added a sortable USB device table for easier browsing.
-- Added USB **Auto-Attach** support, including optional handling for unplugged devices.
-- Added automatic UAC elevation for USB bind and unbind operations when administrator rights are required.
-- Included minor code cleanup and maintenance updates.
+- Added **WSL container support** on the Distributions page, powered by Microsoft's `wslc.exe` container CLI *(requires WSL 2.9.3+)*.
+- Unified the Distributions page with an **All / Distros Only / Containers Only** filter.
+- Added container cards with **expandable details** (ports, volumes, environment with masked secrets, network, restart policy, created time, and best-effort CPU/memory usage).
+- Added container actions: **Start**, **Stop**, **Remove**, and a **Logs** viewer.
+- Added a session-mismatch hint that suggests re-running as administrator (or as a normal user) when containers from a differently-elevated `wslc` session aren't visible.
+- Added graceful degradation so the container filter is hidden with an informational note when a compatible WSL version isn't installed.
+- Added an explicit Windows AppUserModelID so the app shows its own taskbar icon when run from source.
 
-For a release-by-release history, see [`CHANGELOG.md`](./CHANGELOG.md). The release notes for `v1.1.0` are available in [`docs/release-notes-v1.1.0.md`](./docs/release-notes-v1.1.0.md).
+For a release-by-release history, see [`CHANGELOG.md`](./CHANGELOG.md). The release notes for `v1.2.0` are available in [`docs/release-notes-v1.2.0.md`](./docs/release-notes-v1.2.0.md).
 
 ---
 
